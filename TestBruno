@@ -1,0 +1,88 @@
+import tkinter as tk
+from tkinter import messagebox
+from tkinter.simpledialog import askstring
+import openpyxl
+
+def calcular_aliquota_icms():
+    produto_gerador = var_produto_gerador.get()
+    finalidade_autopeca = var_finalidade_autopeca.get()
+
+    if produto_gerador:
+        result_label.config(text="A alíquota de ICMS é: 12%")
+    elif finalidade_autopeca:
+        result_label.config(text="A alíquota de ICMS é: 18%")
+    else:
+        result_label.config(text="A alíquota de ICMS é: [insira aqui a alíquota padrão do estado]")
+    
+    perguntar_majoracao_icms()
+
+def perguntar_majoracao_icms():
+    response = messagebox.askquestion("Pergunta", "Você quer saber se o item tem majoração de 1%?")
+    if response == "yes":
+        ncm = askstring("NCM", "Digite o NCM do item:")
+        if ncm is not None:
+            ncm = ncm.strip()  # Remover espaços em branco
+            if verificar_majoracao(ncm):
+                result_label.config(text="Majoração de 1% é Procedente")
+            else:
+                result_label.config(text="Atenção, Majoração de 1% não é Procedente!")
+            
+            realizar_nova_consulta()  # Após a consulta, oferecer uma nova consulta
+        else:
+            result_label.config(text="Processo encerrado.")
+
+    else:
+        result_label.config(text="Processo encerrado.")
+
+def realizar_nova_consulta():
+    response = messagebox.askquestion("Nova Consulta", "Deseja realizar uma nova consulta?")
+    if response == "yes":
+        result_label.config(text="")
+        calcular_aliquota_icms()
+    else:
+        result_label.config(text="Agradecemos por usar o serviço!")
+
+def verificar_majoracao(ncm):
+    try:
+        workbook = openpyxl.load_workbook(r'C:\Users\hg366\Desktop\Majoração.xlsx')
+        sheet = workbook['Majoração']
+        for row in sheet.iter_rows(values_only=True):
+            if ncm == str(row[0]):  # Comparar como string
+                return True
+        return False
+    except Exception as e:
+        print(f"Erro ao verificar majoração: {e}")
+        return False
+
+# Configuração da interface gráfica
+root = tk.Tk()
+root.title("Calculadora de ICMS")
+
+var_produto_gerador = tk.BooleanVar()
+var_produto_gerador.set(True)  # Inicialmente definido como True
+
+var_finalidade_autopeca = tk.BooleanVar()
+var_finalidade_autopeca.set(False)  # Inicialmente definido como False
+
+frame1 = tk.Frame(root)
+frame1.pack()
+
+label1 = tk.Label(frame1, text="O produto é um gerador?")
+label1.grid(row=0, column=0)
+
+check_produto_gerador = tk.Checkbutton(frame1, variable=var_produto_gerador)
+check_produto_gerador.grid(row=0, column=1)
+
+label3 = tk.Label(frame1, text="Os produtos têm a finalidade de autopeças?")
+label3.grid(row=1, column=0)
+
+check_finalidade_autopeca = tk.Checkbutton(frame1, variable=var_finalidade_autopeca)
+check_finalidade_autopeca.grid(row=1, column=1)
+
+calc_button = tk.Button(root, text="Calcular ICMS", command=calcular_aliquota_icms)
+calc_button.pack()
+
+result_label = tk.Label(root, text="")
+result_label.pack()
+
+root.mainloop()
